@@ -1,7 +1,7 @@
 # Finance Backend API
 
 ## Overview  
-This project is a RESTful backend service designed to manage financial records and user authentication. It is structured to reflect real-world backend systems used in fintech applications, with a focus on clean architecture, scalability, and maintainability.
+This project is a RESTful backend service designed to manage financial records and user authentication. It reflects real-world backend systems used in fintech applications, with a focus on clean architecture, scalability, and maintainability.
 
 ---
 
@@ -69,8 +69,55 @@ Backend_Project/
 
 1. User registers or logs in  
 2. Server validates credentials  
-3. A JWT token is issued  
-4. Protected routes require the token  
+3. A JWT token is issued upon successful authentication  
+4. Protected routes require the token for access  
+
+---
+
+## Live API  
+
+Base URL:  
+https://finance-backend-yzl9.onrender.com/
+
+---
+
+## Example Requests  
+
+### Register User  
+
+```json
+POST /api/auth/register
+
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "password": "123456"
+}
+```
+
+---
+
+### Login User  
+
+```json
+POST /api/auth/login
+
+{
+  "email": "john@example.com",
+  "password": "123456"
+}
+```
+
+---
+
+## Example Response  
+
+```json
+{
+  "message": "Success",
+  "token": "jwt_token_here"
+}
+```
 
 ---
 
@@ -83,15 +130,19 @@ git clone https://github.com/piyushjain76296/Backend_Project.git
 cd Backend_Project
 ```
 
+---
+
 ### Install dependencies  
 
 ```bash
 npm install
 ```
 
+---
+
 ### Configure environment variables  
 
-Create a `.env` file:
+Create a `.env` file in the root directory:
 
 ```
 PORT=5000
@@ -99,11 +150,22 @@ DB_URI=your_database_url
 JWT_SECRET=your_secret_key
 ```
 
+---
+
 ### Run the application  
 
 ```bash
 npm start
 ```
+
+---
+
+## Deployment  
+
+The application is deployed on Render and is publicly accessible.
+
+Live URL:  
+https://finance-backend-yzl9.onrender.com/
 
 ---
 
@@ -127,3 +189,5 @@ The API can be tested using Postman or any HTTP client.
 
 Piyush Jain  
 Full Stack Developer  
+
+---
