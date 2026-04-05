@@ -1,158 +1,252 @@
 # Finance Backend API
 
-## Overview  
-This project is a RESTful backend service designed to manage financial records and user authentication. It reflects real-world backend systems used in fintech applications, with a focus on clean architecture, scalability, and maintainability.
+## Overview
+
+A RESTful backend service for managing financial records with role-based access control. Built with a focus on clean architecture, security, and real-world fintech patterns.
 
 ---
 
-## Features  
+## Features
 
-- User authentication using JSON Web Tokens (JWT)  
-- Secure password handling  
-- CRUD operations for financial records  
-- Structured REST API design  
-- Centralized error handling  
-- Modular code organization  
-
----
-
-## Tech Stack  
-
-- Backend: Node.js, Express.js  
-- Database: MongoDB / PostgreSQL  
-- Authentication: JWT  
-- Tools: Postman, Git  
+- JWT-based user authentication
+- Role-based access control (Admin, Analyst, Viewer)
+- CRUD operations for financial records
+- Dashboard summary endpoint
+- Rate limiting (100 requests per 15 minutes per IP)
+- Centralized error handling
+- Input validation with Zod schemas
+- Modular code organization
 
 ---
 
-## Project Structure  
+## Tech Stack
+
+- **Runtime:** Node.js
+- **Framework:** Express.js
+- **Language:** TypeScript
+- **Authentication:** JWT
+- **Validation:** Zod
+- **Tools:** Postman, Git
+
+---
+
+## Project Structure
 
 ```
-Backend_Project/
-├── controllers/
-├── routes/
-├── models/
-├── middleware/
-├── config/
-├── utils/
-├── app.js
-├── server.js
+zorvyn_assignment/
+├── src/
+│   ├── config/
+│   ├── controllers/
+│   │   ├── auth.controller.ts
+│   │   ├── dashboard.controller.ts
+│   │   ├── record.controller.ts
+│   │   └── user.controller.ts
+│   ├── middlewares/
+│   │   ├── authMiddleware.ts
+│   │   ├── errorHandler.ts
+│   │   ├── roleMiddleware.ts
+│   │   └── validateResource.ts
+│   ├── models/
+│   │   ├── FinancialRecord.ts
+│   │   └── User.ts
+│   ├── routes/
+│   │   ├── auth.routes.ts
+│   │   ├── dashboard.routes.ts
+│   │   ├── index.ts
+│   │   ├── record.routes.ts
+│   │   └── user.routes.ts
+│   ├── types/
+│   ├── validations/
+│   │   ├── auth.schema.ts
+│   │   ├── record.schema.ts
+│   │   └── user.schema.ts
+│   ├── index.ts
+│   └── seed.ts
 ├── package.json
+├── tsconfig.json
 └── .env
 ```
 
 ---
 
-## API Endpoints  
+## API Endpoints
 
-### Authentication  
+> **Base URL:** `https://finance-backend-yzl9.onrender.com`
+>
+> All routes are prefixed with `/api`.
 
-| Method | Endpoint            | Description         |
-|--------|--------------------|---------------------|
-| POST   | /api/auth/register | Register a new user |
-| POST   | /api/auth/login    | Authenticate user   |
+### Authentication — `/api/auth`
 
----
+| Method | Endpoint | Auth Required | Description |
+|--------|----------|:---:|-------------|
+| POST | `/api/auth/login` | ❌ | Login and receive JWT token |
 
-### Records  
-
-| Method | Endpoint           | Description           |
-|--------|-------------------|-----------------------|
-| GET    | /api/records      | Retrieve all records  |
-| POST   | /api/records      | Create a new record   |
-| PUT    | /api/records/:id  | Update a record       |
-| DELETE | /api/records/:id  | Delete a record       |
+> ⚠️ There is no public register endpoint. Users are created by an Admin via `POST /api/users`, or seeded via `npm run seed`.
 
 ---
 
-## Authentication Flow  
+### Users — `/api/users`
 
-1. User registers or logs in  
-2. Server validates credentials  
-3. A JWT token is issued upon successful authentication  
-4. Protected routes require the token for access  
+> Requires authentication + **Admin** role.
 
----
-
-## Live API  
-
-Base URL:  
-https://finance-backend-yzl9.onrender.com/
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/users` | List all users |
+| POST | `/api/users` | Create a new user |
+| PATCH | `/api/users/:id/role` | Update a user's role |
 
 ---
 
-## Example Requests  
+### Financial Records — `/api/records`
 
-### Register User  
+> Requires authentication. Write operations restricted by role.
 
+| Method | Endpoint | Roles | Description |
+|--------|----------|-------|-------------|
+| GET | `/api/records` | All | List all records |
+| POST | `/api/records` | Admin, Analyst | Create a new record |
+| GET | `/api/records/:id` | All | Get a single record |
+| PUT/PATCH | `/api/records/:id` | Admin, Analyst | Update a record |
+| DELETE | `/api/records/:id` | Admin | Delete a record |
+
+---
+
+### Dashboard — `/api/dashboard`
+
+> Requires authentication.
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/dashboard/summary` | Aggregated financial summary |
+
+---
+
+## Roles
+
+| Role | Permissions |
+|------|-------------|
+| `admin` | Full access — all routes including user management and delete |
+| `analyst` | Read + create/update records. No delete, no user management |
+| `viewer` | Read-only — GET records and dashboard summary only |
+
+---
+
+## Authentication Flow
+
+1. Login via `POST /api/auth/login` with email and password
+2. Server validates credentials and returns a JWT token
+3. Include the token in the `Authorization` header for all protected routes:
+   ```
+   Authorization: Bearer <your_token>
+   ```
+
+---
+
+## Example Requests
+
+### Login
+
+```http
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@finance.local",
+  "password": "Admin123!"
+}
+```
+
+**Response:**
 ```json
-POST /api/auth/register
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "...",
+    "name": "Admin",
+    "role": "admin"
+  }
+}
+```
+
+---
+
+### Create a User (Admin only)
+
+```http
+POST /api/users
+Authorization: Bearer <admin_token>
+Content-Type: application/json
 
 {
   "name": "John Doe",
   "email": "john@example.com",
-  "password": "123456"
+  "password": "SecurePass123!",
+  "role": "analyst"
 }
 ```
 
 ---
 
-### Login User  
+### Create a Financial Record
 
-```json
-POST /api/auth/login
+```http
+POST /api/records
+Authorization: Bearer <token>
+Content-Type: application/json
 
 {
-  "email": "john@example.com",
-  "password": "123456"
+  "title": "Office Rent",
+  "amount": 12000,
+  "category": "expense",
+  "date": "2024-03-01"
 }
 ```
 
 ---
 
-## Example Response  
+### Get Dashboard Summary
 
-```json
-{
-  "message": "Success",
-  "token": "jwt_token_here"
-}
+```http
+GET /api/dashboard/summary
+Authorization: Bearer <token>
 ```
 
 ---
 
-## Getting Started  
+## Getting Started
 
-### Clone the repository  
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/piyushjain76296/Backend_Project.git
 cd Backend_Project
 ```
 
----
-
-### Install dependencies  
+### 2. Install dependencies
 
 ```bash
 npm install
 ```
 
----
-
-### Configure environment variables  
+### 3. Configure environment variables
 
 Create a `.env` file in the root directory:
 
-```
+```env
 PORT=5000
 DB_URI=your_database_url
 JWT_SECRET=your_secret_key
 ```
 
----
+### 4. Seed demo users
 
-### Run the application  
+```bash
+npx ts-node src/seed.ts
+```
+
+This creates the default admin, analyst, and viewer accounts.
+
+### 5. Run the application
 
 ```bash
 npm start
@@ -160,34 +254,39 @@ npm start
 
 ---
 
-## Deployment  
+## Deployment
 
-The application is deployed on Render and is publicly accessible.
+Deployed on [Render](https://render.com).
 
-Live URL:  
-https://finance-backend-yzl9.onrender.com/
+**Live URL:** https://finance-backend-yzl9.onrender.com
 
----
-
-## Testing  
-
-The API can be tested using Postman or any HTTP client.
+> The free tier on Render spins down after inactivity. The first request may take ~30 seconds to wake the server.
 
 ---
 
-## Future Improvements  
+## Testing
 
-- Pagination and filtering  
-- Role-based access control  
-- Payment integration  
-- Rate limiting  
-- Logging and monitoring  
+Test all endpoints using [Postman](https://www.postman.com) or any HTTP client.
+
+Suggested test order:
+1. `POST /api/auth/login` → copy the token
+2. Set `Authorization: Bearer <token>` as a header
+3. `GET /api/dashboard/summary`
+4. `GET /api/records`
+5. `POST /api/records`
+
+---
+
+## Future Improvements
+
+- Public registration endpoint
+- Pagination and filtering on records
+- Payment integration
+- Logging and monitoring
+- Swagger / OpenAPI documentation
 
 ---
 
-## Author  
+## Author
 
-Piyush Jain  
-Full Stack Developer  
-
----
+**Piyush Jain** — Full Stack Developer
