@@ -79,9 +79,7 @@ zorvyn_assignment/
 
 | Method | Endpoint | Auth Required | Description |
 |--------|----------|:---:|-------------|
-| POST | `/api/auth/login` | ❌ | Login and receive JWT token |
-
-> ⚠️ There is no public register endpoint. Users are created by an Admin via `POST /api/users`, or seeded via `npm run seed`.
+| POST | `/api/auth/login` |  | Login and receive JWT token |
 
 ---
 
